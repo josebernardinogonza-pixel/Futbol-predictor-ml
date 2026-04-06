@@ -1,21 +1,29 @@
 name: ML-Training-Pipeline
-on: [push] # Se activa cada vez que subes código
+on: [push]
 
 jobs:
   entrenar:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4 # Actualizado de v3 a v4
+
       - name: Configurar Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5 # Actualizado de v4 a v5
         with:
           python-version: '3.9'
+
       - name: Instalar Librerias
-        run: pip install -r requirements.txt
+        run: |
+          pip install pandas scikit-learn joblib
+
       - name: Ejecutar Entrenamiento
-        run: python src/train.py
+        run: |
+          # Asegúrate de que la ruta a tu archivo sea correcta
+          # Si tu archivo está en la raíz, quita "src/"
+          python src/train.py 
+
       - name: Guardar el Modelo
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4 # ¡ESTE ERA EL ERROR! Actualizado a v4
         with:
           name: modelo-futbol
           path: models/soccer_model.pkl
