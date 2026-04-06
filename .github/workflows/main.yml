@@ -26,14 +26,14 @@ jobs:
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
           
-          # 1. Traer los cambios más recientes para evitar el error de 'rejected'
-          git pull origin main --rebase
-          
-          # 2. Añadir el modelo
+          # 1. 'Aseguramos' el archivo del modelo primero
           git add models/soccer_model.pkl
           
-          # 3. Hacer el commit (solo si hay cambios)
-          git commit -m "Actualización automática del modelo [skip ci]" || echo "Sin cambios para subir"
+          # 2. Hacemos el commit ANTES del pull (esto quita el error de 'unstaged changes')
+          git commit -m "Actualización automática del modelo [skip ci]" || echo "Sin cambios"
           
-          # 4. Empujar los cambios
+          # 3. Ahora sí, nos ponemos al día con lo que haya en GitHub
+          git pull --rebase origin main
+          
+          # 4. Empujamos el resultado final
           git push origin main
