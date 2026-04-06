@@ -1,33 +1,30 @@
 name: ML-Training-Pipeline
-on:
-  push:
-    branches: [ main ]
-  schedule:
-    - cron: '0 0 * * 1' # ESTO ES LA MAGIA: Se ejecuta cada Lunes a las 00:00 UTC
+on: [push]
+
+permissions:
+  contents: write # Permiso para que la Action suba el modelo
 
 jobs:
   entrenar:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4 # Actualizado de v3 a v4
+      - uses: actions/checkout@v4
 
       - name: Configurar Python
-        uses: actions/setup-python@v5 # Actualizado de v4 a v5
+        uses: actions/setup-python@v5
         with:
           python-version: '3.9'
 
       - name: Instalar Librerias
-        run: |
-          pip install pandas scikit-learn joblib
+        run: pip install pandas scikit-learn joblib
 
       - name: Ejecutar Entrenamiento
-        run: |
-          # Asegúrate de que la ruta a tu archivo sea correcta
-          # Si tu archivo está en la raíz, quita "src/"
-          python src/train.py 
+        run: python src/train.py
 
-      - name: Guardar el Modelo
-        uses: actions/upload-artifact@v4 # ¡ESTE ERA EL ERROR! Actualizado a v4
-        with:
-          name: modelo-futbol
-          path: models/soccer_model.pkl
+      - name: Subir el modelo al repositorio
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add models/soccer_model.pkl
+          git commit -m "Actualización automática del modelo [skip ci]" || echo "Sin cambios en el modelo"
+          git push
