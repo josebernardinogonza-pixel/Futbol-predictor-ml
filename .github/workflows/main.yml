@@ -1,0 +1,21 @@
+name: ML-Training-Pipeline
+on: [push] # Se activa cada vez que subes código
+
+jobs:
+  entrenar:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Configurar Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.9'
+      - name: Instalar Librerias
+        run: pip install -r requirements.txt
+      - name: Ejecutar Entrenamiento
+        run: python src/train.py
+      - name: Guardar el Modelo
+        uses: actions/upload-artifact@v3
+        with:
+          name: modelo-futbol
+          path: models/soccer_model.pkl
