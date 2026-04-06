@@ -3,33 +3,48 @@ from sklearn.ensemble import RandomForestClassifier
 import joblib
 import os
 
-# Crear carpeta para el modelo
 os.makedirs('models', exist_ok=True)
 
 def train():
-    # 1. Cargar datos
-    url = "https://www.football-data.co.uk/mmz4281/2324/SP1.csv"
-    df = pd.read_csv(url)
+    # Diccionario de ligas (Inglaterra, España, Italia, Alemania)
+    # Nota: Liga MX no está en este servidor gratuito, pero te diré cómo añadirla abajo.
+    urls = {
+        "Premier": "https://www.football-data.co.uk/mmz4281/2324/E0.csv",
+        "LaLiga": "https://www.football-data.co.uk/mmz4281/2324/SP1.csv",
+        "SerieA": "https://www.football-data.co.uk/mmz4281/2324/I1.csv",
+        "Bundesliga": "https://www.football-data.co.uk/mmz4281/2324/D1.csv"
+    }
     
-    # 2. Limpieza básica y creación de columnas (Features)
-    df = df[['HomeTeam', 'AwayTeam', 'FTHG', 'FTAG', 'FTR']].dropna()
+    all_data = []
+
+    for liga, url in urls.items():
+        print(f"Descargando datos de {liga}...")
+        df_temp = pd.read_csv(url)
+        df_temp['Liga'] = liga # Etiquetamos la liga
+        all_data.append(df_temp)
+
+    # Unimos todas las ligas en un solo DataFrame gigante
+    df = pd.concat(all_data, ignore_index=True)
     
-    # Creamos promedios simples
-    df['Promedio_Goles_Local'] = df.groupby('HomeTeam')['FTHG'].transform(lambda x: x.rolling(3, closed='left').mean())
-    df['Promedio_Goles_Visitante'] = df.groupby('AwayTeam')['FTAG'].transform(lambda x: x.rolling(3, closed='left').mean())
+    # Limpieza
+    cols = ['HomeTeam', 'AwayTeam', 'FTHG', 'FTAG', 'FTR', 'Liga']
+    df = df[cols].dropna()
+    
+    # Ingeniería de características (Forma actual)
+    df['Promedio_Goles_Local'] = df.groupby(['Liga', 'HomeTeam'])['FTHG'].transform(lambda x: x.rolling(3, closed='left').mean())
+    df['Promedio_Goles_Visitante'] = df.groupby(['Liga', 'AwayTeam'])['FTAG'].transform(lambda x: x.rolling(3, closed='left').mean())
     
     df = df.dropna()
 
-    # 3. Entrenar el modelo
+    # Entrenar el modelo con datos internacionales
     X = df[['Promedio_Goles_Local', 'Promedio_Goles_Visitante']]
     y = df['FTR']
     
-    model = RandomForestClassifier(n_estimators=50)
+    model = RandomForestClassifier(n_estimators=100)
     model.fit(X, y)
     
-    # 4. Guardar el modelo
     joblib.dump(model, 'models/soccer_model.pkl')
-    print("Modelo entrenado y guardado correctamente.")
+    print("¡Sistema Internacional entrenado!")
 
 if __name__ == "__main__":
     train()
