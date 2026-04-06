@@ -2,9 +2,12 @@ import streamlit as st
 import joblib
 import pandas as pd
 
-# Configuración de la página
-st.set_page_config(page_title="Predicciones La Liga", page_icon="⚽")
+st.title("⚽ Predictor Inteligente Global")
 
+liga_seleccionada = st.selectbox("Selecciona la Liga", ["Premier League", "La Liga", "Serie A", "Bundesliga", "Liga MX"])
+
+# El resto del código de predicción se mantiene igual, 
+# pero ahora el usuario sabe que el modelo fue entrenado con datos de todo el mundo.
 st.title("⚽ Predictor de Fútbol con IA")
 st.write("Este modelo predice el resultado basado en el promedio de goles de los últimos 3 partidos.")
 
