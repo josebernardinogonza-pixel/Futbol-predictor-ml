@@ -1,3 +1,5 @@
+import os
+os.makedirs('models', exist_ok=True)
 {
   "nbformat": 4,
   "nbformat_minor": 0,
