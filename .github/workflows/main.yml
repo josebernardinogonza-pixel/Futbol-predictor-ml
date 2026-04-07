@@ -26,8 +26,8 @@ jobs:
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
           
-          # 1. 'Aseguramos' el archivo del modelo primero
-          git add models/soccer_model.pkl
+          # 1. # AÑADIR LOS DOS ARCHIVOS AQUÍ:
+          git add models/soccer_model.pkl models/team_stats.csv
           
           # 2. Hacemos el commit ANTES del pull (esto quita el error de 'unstaged changes')
           git commit -m "Actualización automática del modelo [skip ci]" || echo "Sin cambios"
