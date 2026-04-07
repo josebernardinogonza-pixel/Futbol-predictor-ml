@@ -1,13 +1,12 @@
 import pandas as pd
-from sklearn.ensemble import RandomForestClassifier
+import numpy as np
+from sklearn.ensemble import GradientBoostingClassifier
 import joblib
 import os
 
 os.makedirs('models', exist_ok=True)
 
 def train():
-    # Diccionario de ligas (Inglaterra, España, Italia, Alemania)
-    # Nota: Liga MX no está en este servidor gratuito, pero te diré cómo añadirla abajo.
     urls = {
         "Premier": "https://www.football-data.co.uk/mmz4281/2324/E0.csv",
         "LaLiga": "https://www.football-data.co.uk/mmz4281/2324/SP1.csv",
@@ -16,35 +15,54 @@ def train():
     }
     
     all_data = []
-
     for liga, url in urls.items():
-        print(f"Descargando datos de {liga}...")
-        df_temp = pd.read_csv(url)
-        df_temp['Liga'] = liga # Etiquetamos la liga
-        all_data.append(df_temp)
+        try:
+            df_l = pd.read_csv(url)
+            df_l['Liga'] = liga
+            all_data.append(df_l)
+        except: continue
 
-    # Unimos todas las ligas en un solo DataFrame gigante
     df = pd.concat(all_data, ignore_index=True)
-    
-    # Limpieza
-    cols = ['HomeTeam', 'AwayTeam', 'FTHG', 'FTAG', 'FTR', 'Liga']
-    df = df[cols].dropna()
-    
-    # Ingeniería de características (Forma actual)
-    df['Promedio_Goles_Local'] = df.groupby(['Liga', 'HomeTeam'])['FTHG'].transform(lambda x: x.rolling(3, closed='left').mean())
-    df['Promedio_Goles_Visitante'] = df.groupby(['Liga', 'AwayTeam'])['FTAG'].transform(lambda x: x.rolling(3, closed='left').mean())
-    
-    df = df.dropna()
+    df = df[['HomeTeam', 'AwayTeam', 'FTHG', 'FTAG', 'FTR', 'Liga']].dropna()
 
-    # Entrenar el modelo con datos internacionales
-    X = df[['Promedio_Goles_Local', 'Promedio_Goles_Visitante']]
-    y = df['FTR']
+    # --- CÁLCULO DE FUERZA DE ATAQUE Y DEFENSA (MÉTODO PROFESIONAL) ---
+    # Promedio de goles de la liga
+    avg_home_g = df['FTHG'].mean()
+    avg_away_g = df['FTAG'].mean()
+
+    # Fuerza de ataque local: (Goles hechos en casa / Promedio liga en casa)
+    home_attack = df.groupby('HomeTeam')['FTHG'].mean() / avg_home_g
+    # Fuerza de defensa local: (Goles recibidos en casa / Promedio liga fuera)
+    home_defense = df.groupby('HomeTeam')['FTAG'].mean() / avg_away_g
     
-    model = RandomForestClassifier(n_estimators=100)
+    # Fuerza de ataque visitante: (Goles hechos fuera / Promedio liga fuera)
+    away_attack = df.groupby('AwayTeam')['FTAG'].mean() / avg_away_g
+    # Fuerza de defensa visitante: (Goles recibidos fuera / Promedio liga en casa)
+    away_defense = df.groupby('AwayTeam')['FTHG'].mean() / avg_home_g
+
+    # Guardar estas métricas para la App
+    stats = pd.DataFrame({
+        'Atk_Home': home_attack, 'Def_Home': home_defense,
+        'Atk_Away': away_attack, 'Def_Away': away_defense
+    }).fillna(1.0).reset_index()
+    stats.columns = ['Equipo', 'Atk_Home', 'Def_Home', 'Atk_Away', 'Def_Away']
+    stats.to_csv('models/team_stats.csv', index=False)
+
+    # --- ENTRENAMIENTO DEL MODELO ---
+    # Creamos las variables de entrenamiento basadas en fuerzas
+    train_df = df.copy()
+    train_df = train_df.merge(stats[['Equipo', 'Atk_Home', 'Def_Home']], left_on='HomeTeam', right_on='Equipo')
+    train_df = train_df.merge(stats[['Equipo', 'Atk_Away', 'Def_Away']], left_on='AwayTeam', right_on='Equipo')
+
+    X = train_df[['Atk_Home', 'Def_Home', 'Atk_Away', 'Def_Away']]
+    y = train_df['FTR'] # H, D, A
+
+    # Usamos Gradient Boosting (más potente que Random Forest para esto)
+    model = GradientBoostingClassifier(n_estimators=100, learning_rate=0.1)
     model.fit(X, y)
     
     joblib.dump(model, 'models/soccer_model.pkl')
-    print("¡Sistema Internacional entrenado!")
+    print("✅ Sistema de Alta Precisión entrenado.")
 
 if __name__ == "__main__":
     train()
