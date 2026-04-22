@@ -25,7 +25,7 @@ def train():
     df = pd.concat(all_data, ignore_index=True)
     df = df[['HomeTeam', 'AwayTeam', 'FTHG', 'FTAG', 'FTR', 'Liga']].dropna()
 
-    # --- CÁLCULO DE FUERZA DE ATAQUE Y DEFENSA (MÉTODO PROFESIONAL) ---
+    # --- CÃLCULO DE FUERZA DE ATAQUE Y DEFENSA (MÃTODO PROFESIONAL) ---
     # Promedio de goles de la liga
     avg_home_g = df['FTHG'].mean()
     avg_away_g = df['FTAG'].mean()
@@ -40,7 +40,7 @@ def train():
     # Fuerza de defensa visitante: (Goles recibidos fuera / Promedio liga en casa)
     away_defense = df.groupby('AwayTeam')['FTHG'].mean() / avg_home_g
 
-    # Guardar estas métricas para la App
+    # Guardar estas mÃ©tricas para la App
     stats = pd.DataFrame({
         'Atk_Home': home_attack, 'Def_Home': home_defense,
         'Atk_Away': away_attack, 'Def_Away': away_defense
@@ -57,12 +57,12 @@ def train():
     X = train_df[['Atk_Home', 'Def_Home', 'Atk_Away', 'Def_Away']]
     y = train_df['FTR'] # H, D, A
 
-    # Usamos Gradient Boosting (más potente que Random Forest para esto)
+    # Usamos Gradient Boosting (mÃ¡s potente que Random Forest para esto)
     model = GradientBoostingClassifier(n_estimators=100, learning_rate=0.1)
     model.fit(X, y)
     
     joblib.dump(model, 'models/soccer_model.pkl')
-    print("✅ Sistema de Alta Precisión entrenado.")
+    print("â Sistema de Alta PrecisiÃ³n entrenado.")
 
 if __name__ == "__main__":
     train()
